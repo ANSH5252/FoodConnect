@@ -1,5 +1,11 @@
-# Ignore the actual config file with keys
-public/config.js
+# Dependency directories
+node_modules/
+
+# Vite build output
+dist/
+
+# Environment variables file
+.env
 
 # Ignore Firebase cache
 .firebase/

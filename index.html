@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodConnect | Share Food, Share Love</title>
+    
+    <link rel="stylesheet" href="/src/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+</head>
+<body>
+
+    <div id="landing-page">
+        <div class="split left-split" onclick="selectRole('donor')">
+            <div class="content">
+                <h1>🙌 I want to Donate</h1>
+                <p class="hidden-text">Become a Hunger Hero.<br>Turn surplus into smiles.</p>
+                <button class="enter-btn">Login as Donor &rarr;</button>
+            </div>
+            <div class="overlay"></div>
+        </div>
+        <div class="split right-split" onclick="selectRole('beneficiary')">
+            <div class="content">
+                <h1>🍽 I need Food</h1>
+                <p class="hidden-text">Locate fresh meals nearby.<br>Get navigation routes instantly.</p>
+                <button class="enter-btn">Login as Beneficiary &rarr;</button>
+            </div>
+            <div class="overlay"></div>
+        </div>
+    </div>
+
+    <nav>
+        <div class="logo" onclick="goHome()">🥗 FoodConnect</div>
+        
+        <div class="nav-actions">
+            <button id="cart-btn" class="neon-btn" onclick="openCart()" style="display:none;">
+                🛒 Cart (<span id="cart-count">0</span>)
+            </button>
+            <button id="orders-btn" class="neon-btn" onclick="openOrders()" style="display:none;">
+                📦 My Orders
+            </button>
+            <button id="pickups-btn" class="neon-btn" onclick="openPickups()" style="display:none;">
+                📅 My Pickups
+            </button>
+        </div>
+
+        <div class="auth-container">
+            <button id="login-btn" class="login-btn-main" onclick="googleLogin()">Login with Google</button>
+            
+            <div id="user-profile" class="profile-wrapper" style="display:none;" onclick="toggleProfileMenu()">
+                <span id="user-name">User</span>
+                <img id="user-img" src="" alt="User">
+                
+                <div id="profile-dropdown" class="dropdown-menu">
+                    <a onclick="openHistory()">🕒 View History</a>
+                    <a onclick="logout()" style="color: #ff5252; border-top: 1px solid #444;">🚪 Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" id="main-container">
+        <div class="panel left-panel">
+            <div id="donor-section">
+                <h2>📢 Donate Food</h2>
+                <p style="color:#aaa; font-size:0.9rem;">Fill details to post a donation.</p>
+                <form id="donation-form">
+                    <h4 class="step-title">Step 1: Food Details</h4>
+                    <label>Name of Place / Donor</label>
+                    <input type="text" id="placeName" placeholder="e.g. SRM Canteen" required>
+                    <label>Food Item</label>
+                    <input type="text" id="foodItem" placeholder="e.g. Rice & Curry" required>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label>Type</label>
+                            <select id="foodType"><option value="Veg">🟢 Veg</option><option value="Non-Veg">🔴 Non-Veg</option></select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label>Quantity (Servings)</label>
+                            <input type="number" id="quantity" placeholder="e.g. 50" required min="1">
+                        </div>
+                    </div>
+                    <h4 class="step-title">Step 2: Pickup Location</h4>
+                    <label>Address Line</label>
+                    <input type="text" id="donorAddr" placeholder="e.g. House 12, Sector 62" required>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;"><label>City</label><input type="text" id="donorCity" placeholder="City" required></div>
+                        <div style="flex: 1;"><label>Pincode</label><input type="text" id="donorPincode" placeholder="e.g. 201301" required></div>
+                    </div>
+                    <button type="button" onclick="findLocation('donor')" class="locate-btn">🔎 Locate Me on Map</button>
+                    <button type="submit" id="submit-btn">✅ Post Donation</button>
+                </form>
+            </div>
+
+            <div id="beneficiary-section" style="display:none;">
+                <h2>📍 Your Location</h2>
+                <p style="color:#aaa; font-size:0.9rem;">Enter location to find food routes.</p>
+                <label>Address Line</label>
+                <input type="text" id="benAddr" placeholder="e.g. House 12, Indirapuram">
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;"><label>City</label><input type="text" id="benCity" placeholder="City"></div>
+                    <div style="flex: 1;"><label>Pincode</label><input type="text" id="benPincode" placeholder="e.g. 201014"></div>
+                </div>
+                <button type="button" onclick="findLocation('beneficiary')" class="locate-btn">📍 Set My Location</button>
+            </div>
+            <div id="status-message"></div>
+        </div>
+
+        <div class="panel right-panel">
+            <h2>🌍 Live Map</h2>
+            <div id="map-wrapper">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="listings-container" id="listings-container" style="display:none;">
+        <h3 id="list-title">Recent Donations</h3>
+        <p id="list-subtitle" style="color:#aaa; font-size:0.9rem; margin-bottom:15px; display:none;">Select items below to add to cart.</p>
+        <ul id="listings-list"><li>Loading...</li></ul>
+    </div>
+
+    <div id="cart-page" class="sub-page" style="display:none;">
+        <h2 style="color:#00e676; border-bottom:1px solid #333; padding-bottom:10px;">🛒 Your Food Cart</h2>
+        <div id="cart-items-list" style="margin-bottom:2rem;"></div>
+        <h3 style="color:white;">👤 Your Details</h3>
+        <form id="checkout-form">
+            <label>Full Name</label>
+            <input type="text" id="claimerName" placeholder="e.g. Rahul Kumar" required>
+            <label>Phone Number</label>
+            <input type="tel" id="claimerPhone" placeholder="e.g. 9876543210" required>
+            <button type="submit" class="neon-btn-fill" style="width:100%; margin-top:20px;">✅ Confirm & Place Order</button>
+            <button type="button" onclick="goHome()" class="back-link">&larr; Back to Map</button>
+        </form>
+    </div>
+
+    <div id="pickups-page" class="sub-page" style="display:none;">
+        <h2 style="color:#00e676; border-bottom:1px solid #333; padding-bottom:10px;">📅 Scheduled Pickups</h2>
+        <p style="color:#aaa;">People coming to collect food from you.</p>
+        <ul id="pickups-list" class="styled-list"><li>Loading...</li></ul>
+        <button type="button" onclick="goHome()" class="btn-secondary">🏠 Back to Dashboard</button>
+    </div>
+
+    <div id="orders-page" class="sub-page" style="display:none;">
+        <h2 style="color:#2196F3; border-bottom:1px solid #333; padding-bottom:10px;">📦 Active Orders</h2>
+        <p style="color:#aaa;">Pending pickups for food you claimed.</p>
+        <ul id="orders-list" class="styled-list"><li>Loading...</li></ul>
+        <button type="button" onclick="goHome()" class="btn-secondary">🏠 Back to Map</button>
+    </div>
+
+    <div id="history-page" class="sub-page" style="display:none;">
+        <h2 style="color:#888; border-bottom:1px solid #333; padding-bottom:10px;">🕒 Activity History</h2>
+        <p style="color:#777;">Record of all completed donations and claims.</p>
+        <ul id="history-list" class="styled-list"><li>Loading history...</li></ul>
+        <button type="button" onclick="goHome()" class="btn-secondary">🏠 Back to Home</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
